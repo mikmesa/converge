@@ -139,6 +139,16 @@ export function privateLeverText(
 
 /** Plain explanation of how the final decision was reached (§21). */
 export function outcomeText(o: VoteOutcomeView, options: Record<string, OptionCard>): string[] {
+  const lines = outcomeLines(o, options);
+  if (!o.closedEarly) return lines;
+  const didnt = o.participantCount - o.votesCast;
+  return [
+    ...lines,
+    `The organizer closed voting early: ${o.votesCast} of ${o.participantCount} people voted, and the ${didnt === 1 ? "person" : `${didnt} people`} who didn't vote ${didnt === 1 ? "isn't" : "aren't"} counted.`,
+  ];
+}
+
+function outcomeLines(o: VoteOutcomeView, options: Record<string, OptionCard>): string[] {
   const name = (id: string | null) => (id ? (options[id]?.name ?? "The option") : "The option");
   const sorted = Object.entries(o.tally).sort((a, b) => b[1] - a[1]);
   const score = sorted.filter(([, v]) => v > 0).map(([, v]) => v).join("–");

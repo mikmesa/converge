@@ -156,6 +156,19 @@ Resolution:
 3. Still tied → fewer Conflict participants.
 4. Still tied → **No decision — final vote remained tied.**
 
-There is no randomness, no organizer override and no array-order winner. A
-post-reveal response edit clears all votes (D5), because the options may have
-changed.
+There is no randomness and no array-order winner. A post-reveal response
+edit clears all votes (D5), because the options may have changed.
+
+**Organizer early close.** This was a product decision after the 10-person
+test. A seat that can never vote, such as a lost session, would otherwise
+block the decision forever. The organizer may therefore close voting, subject
+to these rules:
+
+- It is only allowed while voting is open.
+- **More than half** of the participants must already have voted.
+- It is irreversible.
+
+Non-voters are not counted, and the same tie-break rules apply. The outcome
+states that voting was closed early and how many people voted, but never who.
+The control is always visible to the organizer, so it reveals nothing. A
+refused attempt only tells them "fewer than half have voted".

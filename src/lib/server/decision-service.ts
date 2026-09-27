@@ -13,6 +13,7 @@ import {
 } from "../engine";
 import { sanitizeResult } from "../engine/sanitize";
 import { getSql } from "./db";
+import { closeQuorumMet } from "../domain/rules";
 import { ApiError } from "./errors";
 
 /**
@@ -41,6 +42,8 @@ interface DecisionRow {
   final_choice_option_id: string | null;
   vote_tally: { tally: Record<string, number>; tiedOptionIds: string[] } | null;
   tiebreak_reason: "majority" | "strong_fit" | "fewest_conflict" | null;
+  closed_early: boolean;
+  votes_cast: number | null;
 }
 
 interface ParticipantRow {
@@ -194,7 +197,7 @@ function toCards(s: LoadedState): OptionCard[] {
   }));
 }
 
-function outcomeView(d: DecisionRow): VoteOutcomeView | null {
+function outcomeView(d: DecisionRow, participantCount: number): VoteOutcomeView | null {
   if (d.status !== "decided" || !d.outcome) return null;
   return {
     outcome: d.outcome,
@@ -202,6 +205,9 @@ function outcomeView(d: DecisionRow): VoteOutcomeView | null {
     tally: d.vote_tally?.tally ?? {},
     reason: d.tiebreak_reason,
     tiedOptionIds: d.vote_tally?.tiedOptionIds ?? [],
+    closedEarly: d.closed_early,
+    votesCast: d.votes_cast ?? participantCount,
+    participantCount,
   };
 }
 
@@ -234,7 +240,7 @@ function buildSanitized(s: LoadedState, viewer: ParticipantRow, engine: EngineRe
     cards: toCards(s),
     result: engine,
     myVoteOptionId: myVote,
-    outcome: outcomeView(s.decision),
+    outcome: outcomeView(s.decision, s.participants.length),
   });
 }
 
@@ -291,20 +297,59 @@ export async function castVote(
 
     if (votes.length < s.participants.length) return { recorded: true, decided: false };
 
-    const outcome = resolveVote(
-      votes.map((v) => ({ participantId: v.participant_id, optionId: v.option_id })),
-      voteCandidates(engine),
-    );
-    const tally = { tally: outcome.tally, tiedOptionIds: outcome.tiedOptionIds };
-    await tx`
-      update public.decisions set
-        status = 'decided',
-        decided_at = clock_timestamp(),
-        outcome = ${outcome.outcome},
-        final_choice_option_id = ${outcome.outcome === "selected" ? outcome.optionId : null},
-        tiebreak_reason = ${outcome.outcome === "selected" ? outcome.reason : null},
-        vote_tally = ${tx.json(tally)}
-      where id = ${decisionId} and status = 'revealed'`;
+    await finalize(tx, decisionId, votes, engine, { closedEarly: false });
     return { recorded: true, decided: true };
+  });
+}
+
+/**
+ * Resolve the vote with the pure resolveVote() and move the decision to
+ * "decided" — inside the caller's locked transaction. Used both when the last
+ * participant votes and when the organizer closes voting early.
+ */
+async function finalize(
+  tx: Tx,
+  decisionId: string,
+  votes: { participant_id: string; option_id: string }[],
+  engine: EngineResult,
+  opts: { closedEarly: boolean },
+) {
+  const outcome = resolveVote(
+    votes.map((v) => ({ participantId: v.participant_id, optionId: v.option_id })),
+    voteCandidates(engine),
+  );
+  const tally = { tally: outcome.tally, tiedOptionIds: outcome.tiedOptionIds };
+  await tx`
+    update public.decisions set
+      status = 'decided',
+      decided_at = clock_timestamp(),
+      outcome = ${outcome.outcome},
+      final_choice_option_id = ${outcome.outcome === "selected" ? outcome.optionId : null},
+      tiebreak_reason = ${outcome.outcome === "selected" ? outcome.reason : null},
+      vote_tally = ${tx.json(tally)},
+      closed_early = ${opts.closedEarly},
+      votes_cast = ${votes.length}
+    where id = ${decisionId} and status = 'revealed'`;
+}
+
+/**
+ * Organizer closes voting early (product decision: rescues a group stuck on a
+ * lost-session seat). Organizer only; voting must be open; more than half of
+ * the participants must have voted. Irreversible. The only signal a refused
+ * attempt gives is "fewer than half have voted" — never counts or names.
+ */
+export async function closeVoting(decisionId: string, userId: string): Promise<{ decided: true }> {
+  const sql = getSql();
+  return sql.begin(async (tx) => {
+    const s = await loadState(tx, decisionId, true);
+    if (!s) throw new ApiError("not_found");
+    const viewer = viewerOf(s, userId);
+    if (!viewer.is_organizer) throw new ApiError("not_organizer");
+    if (s.decision.status !== "revealed") throw new ApiError("voting_closed");
+    const engine = computeEngine(toEngineParticipants(s), toEngineOptions(s));
+    if (engine.feasibleCount === 0) throw new ApiError("voting_unavailable");
+    if (!closeQuorumMet(s.votes.length, s.participants.length)) throw new ApiError("quorum_not_met");
+    await finalize(tx, decisionId, s.votes, engine, { closedEarly: true });
+    return { decided: true };
   });
 }

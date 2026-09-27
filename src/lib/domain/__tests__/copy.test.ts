@@ -49,16 +49,27 @@ describe("publicLeverText — privacy-safe", () => {
 describe("outcomeText", () => {
   it("majority without tie-break", () => {
     expect(
-      outcomeText({ outcome: "selected", optionId: "coorg", tally: { coorg: 3, goa: 2, hampi: 0 }, reason: "majority", tiedOptionIds: ["coorg"] }, options),
+      outcomeText({ outcome: "selected", optionId: "coorg", tally: { coorg: 3, goa: 2, hampi: 0 }, reason: "majority", tiedOptionIds: ["coorg"], closedEarly: false, votesCast: 5, participantCount: 5 }, options),
     ).toEqual(["Coorg was selected 3–2.", "No tie-break was required."]);
   });
   it("tie resolved by strong fit", () => {
     expect(
-      outcomeText({ outcome: "selected", optionId: "goa", tally: { goa: 2, coorg: 2, hampi: 0 }, reason: "strong_fit", tiedOptionIds: ["goa", "coorg"] }, options),
+      outcomeText({ outcome: "selected", optionId: "goa", tally: { goa: 2, coorg: 2, hampi: 0 }, reason: "strong_fit", tiedOptionIds: ["goa", "coorg"], closedEarly: false, votesCast: 4, participantCount: 4 }, options),
     ).toEqual(["Goa and Coorg tied 2–2.", "Goa was selected because it had more Strong Fit participants."]);
   });
+  it("early close says so, with counts but no names", () => {
+    const t = outcomeText(
+      { outcome: "selected", optionId: "coorg", tally: { coorg: 4, goa: 2, hampi: 0 }, reason: "majority", tiedOptionIds: ["coorg"], closedEarly: true, votesCast: 6, participantCount: 8 },
+      options,
+    );
+    expect(t).toEqual([
+      "Coorg was selected 4–2.",
+      "No tie-break was required.",
+      "The organizer closed voting early: 6 of 8 people voted, and the 2 people who didn't vote aren't counted.",
+    ]);
+  });
   it("unresolved tie → no decision", () => {
-    const t = outcomeText({ outcome: "tied_no_decision", optionId: null, tally: { goa: 1, coorg: 1 }, reason: null, tiedOptionIds: ["goa", "coorg"] }, options);
+    const t = outcomeText({ outcome: "tied_no_decision", optionId: null, tally: { goa: 1, coorg: 1 }, reason: null, tiedOptionIds: ["goa", "coorg"], closedEarly: false, votesCast: 2, participantCount: 2 }, options);
     expect(t[0]).toBe("No decision — final vote remained tied.");
   });
 });

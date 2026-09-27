@@ -37,3 +37,11 @@ export function applyLimitIncrease(currentLimit: number, newLimit: number): Limi
   if (newLimit <= currentLimit) return { ok: false, reason: "limit_must_increase" };
   return { ok: true, limit: newLimit };
 }
+
+/**
+ * Organizer early close: allowed only once MORE THAN HALF of the participants
+ * have voted, so an organizer can't cast one vote and immediately close.
+ */
+export function closeQuorumMet(votesCast: number, participantCount: number): boolean {
+  return votesCast * 2 > participantCount;
+}

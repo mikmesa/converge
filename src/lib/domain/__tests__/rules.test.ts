@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyLimitIncrease, canJoin, revealEligible } from "../rules";
+import { applyLimitIncrease, canJoin, closeQuorumMet, revealEligible } from "../rules";
 import { ACTIVITIES, OPTION_TYPES } from "../taxonomy";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -68,5 +68,18 @@ describe("taxonomy is in sync with the database CHECK constraints", () => {
     expect(m).not.toBeNull();
     const dbActs = m![1].match(/'([a-z_]+)'/g)!.map((s) => s.slice(1, -1));
     expect(dbActs).toEqual([...ACTIVITIES]);
+  });
+});
+
+describe("organizer early close quorum", () => {
+  it("needs MORE than half of the participants to have voted", () => {
+    expect(closeQuorumMet(1, 3)).toBe(false);
+    expect(closeQuorumMet(2, 3)).toBe(true);
+    expect(closeQuorumMet(4, 8)).toBe(false);
+    expect(closeQuorumMet(5, 8)).toBe(true);
+    expect(closeQuorumMet(7, 8)).toBe(true);
+  });
+  it("an organizer's lone vote can never close voting (groups are 3–8)", () => {
+    for (let n = 3; n <= 8; n++) expect(closeQuorumMet(1, n)).toBe(false);
   });
 });

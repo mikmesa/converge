@@ -87,14 +87,15 @@ Three decisions were run:
 - The option detail page reloads results on each visit, so it shows a brief
   "Loading…".
 
-## Decision needed from you
+## Follow-up decision (resolved)
 
-Bug 3 is the one that can actually stall a real group. Options:
+For bug 3 you chose **option 2**: the organizer can close voting early. As
+built:
 
-1. **Personal resume link.** After joining, each person gets a private "come
-   back as me" link they can open on any device. This is the safest fix and
-   matches the "future feature" already noted.
-2. **The organizer can end voting once everyone *active* has voted.** This
-   changes the "all participants vote" rule and adds organizer power.
-3. **Keep as is.** The group starts a new decision if someone's session is
-   lost.
+- It works only once **more than half** the group has voted.
+- It is irreversible.
+- Non-voters aren't counted.
+- The outcome says "The organizer closed voting early: N of M people voted".
+
+It is covered by integration tests (quorum, organizer-only, irreversibility,
+edit-clears-votes, racing the last vote) and by an end-to-end test.

@@ -245,6 +245,64 @@ export function ResultsView({ decision }: { decision: DecisionPublic }) {
   );
 }
 
+/**
+ * Organizer-only escape hatch for a group stuck on someone who can't vote
+ * (e.g. a lost session). Always shown to the organizer while voting is open,
+ * so its presence reveals nothing; the server enforces the quorum.
+ */
+function CloseVoting({ result, onClosed }: { result: SanitizedResult; onClosed: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function close() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.closeVoting(result.decision.id);
+      onClosed();
+    } catch (err) {
+      const code = err instanceof AppError ? err.code : "unknown";
+      setError(
+        code === "quorum_not_met"
+          ? "Not enough people have voted yet — more than half the group needs to vote before you can close it."
+          : code === "voting_closed"
+            ? "Voting has already closed."
+            : "Couldn't close voting. Try again.",
+      );
+      setConfirming(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2 border-t border-line pt-4">
+      <p className="text-sm font-medium">Organizer: someone can’t vote?</p>
+      <p className="text-xs text-muted">
+        If a person has lost access or isn’t going to vote, you can close voting. More than half the
+        group must have voted; anyone who hasn’t voted won’t be counted. The result will say voting
+        was closed early. This can’t be undone.
+      </p>
+      {confirming ? (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}>
+            Keep voting open
+          </Button>
+          <Button onClick={close} busy={busy}>
+            Yes, close voting now
+          </Button>
+        </div>
+      ) : (
+        <Button variant="secondary" onClick={() => setConfirming(true)}>
+          Close voting now
+        </Button>
+      )}
+      {error ? <Notice tone="danger">{error}</Notice> : null}
+    </div>
+  );
+}
+
 function VotePanel({ result, onVoted }: { result: SanitizedResult; onVoted: () => void }) {
   const [choice, setChoice] = useState<string | null>(result.voting.myVoteOptionId);
   const [busy, setBusy] = useState(false);
@@ -328,6 +386,7 @@ function VotePanel({ result, onVoted }: { result: SanitizedResult; onVoted: () =
       <Button onClick={cast} busy={busy} disabled={!choice || choice === mine} className="w-full sm:w-auto">
         {mine ? "Change my vote" : "Cast my vote"}
       </Button>
+      {result.viewer.isOrganizer ? <CloseVoting result={result} onClosed={onVoted} /> : null}
     </Card>
   );
 }

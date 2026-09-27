@@ -196,3 +196,49 @@ test("invalid and unknown decision links have calm states", async ({ page }) => 
   await page.goto("/d/00000000-0000-4000-8000-000000000000");
   await expect(page.getByText("We couldn't find this decision")).toBeVisible();
 });
+
+test("organizer closes voting when someone can't vote", async ({ browser }, info) => {
+  const opts = info.project.use;
+  const a = await newPerson(browser, opts);
+  const b = await newPerson(browser, opts);
+  const c = await newPerson(browser, opts);
+  const url = await createDecision(a.page, "Ghost seat trip", 3, "Ola");
+  await setType(a.page, "Hills & plantations", "Prefer");
+  await submit(a.page);
+  await join(b.page, url, "Ben");
+  await setType(b.page, "Hills & plantations", "Prefer");
+  await submit(b.page);
+  await join(c.page, url, "Cy");
+  await submit(c.page);
+  await expect(c.page.getByRole("heading", { name: "Final vote" })).toBeVisible();
+  // Cy "loses access" and never votes.
+  await c.context.close();
+
+  await a.page.reload();
+  await a.page.locator('input[name="vote"]').first().check();
+  await a.page.getByRole("button", { name: "Cast my vote" }).click();
+  await expect(a.page.getByText("Your vote is recorded.")).toBeVisible();
+
+  // Only the organizer sees the control; non-organizers never do.
+  await b.page.reload();
+  await expect(b.page.getByRole("button", { name: "Close voting now" })).toHaveCount(0);
+
+  // 1 of 3 voted → refused without revealing counts.
+  await a.page.getByRole("button", { name: "Close voting now" }).click();
+  await a.page.getByRole("button", { name: "Yes, close voting now" }).click();
+  await expect(a.page.getByText(/Not enough people have voted yet/)).toBeVisible();
+
+  await b.page.locator('input[name="vote"]').first().check();
+  await b.page.getByRole("button", { name: "Cast my vote" }).click();
+  await expect(b.page.getByText("Your vote is recorded.")).toBeVisible();
+
+  await a.page.reload();
+  await a.page.getByRole("button", { name: "Close voting now" }).click();
+  await a.page.getByRole("button", { name: "Yes, close voting now" }).click();
+  await expect(a.page.getByText("Final group decision")).toBeVisible();
+  await expect(a.page.getByText(/The organizer closed voting early: 2 of 3 people voted/)).toBeVisible();
+
+  await b.page.reload();
+  await expect(b.page.getByText(/closed voting early/)).toBeVisible();
+  for (const p of [a, b]) await p.context.close();
+});

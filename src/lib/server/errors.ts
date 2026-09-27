@@ -8,6 +8,8 @@ export type ApiErrorCode =
   | "voting_unavailable"
   | "not_a_top_option"
   | "hard_excluded"
+  | "not_organizer"
+  | "quorum_not_met"
   | "server_misconfigured"
   | "internal";
 
@@ -21,6 +23,8 @@ const STATUS: Record<ApiErrorCode, number> = {
   voting_unavailable: 409,
   not_a_top_option: 409,
   hard_excluded: 409,
+  not_organizer: 403,
+  quorum_not_met: 409,
   server_misconfigured: 503,
   internal: 500,
 };

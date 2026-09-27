@@ -38,6 +38,7 @@ Browser (Next.js client, publishable key only, anonymous Supabase session)
   └─ Next.js route handlers (server only)
        GET  /api/decisions/:id/results      engine → sanitized result
        POST /api/decisions/:id/vote         blind vote + atomic finalize
+       POST /api/decisions/:id/close-voting organizer early close (quorum > half)
        GET  /api/decisions/:id/explanation  optional AI prose (never blocks)
             │  verify JWT → require membership → Postgres as `converge_server`
             ▼
@@ -165,8 +166,9 @@ The Next.js app is at the root of this repository.
   submits keeps the decision from revealing. Raising the limit doesn't help,
   because their seat still counts, and there is intentionally no "remove
   participant" feature: it would let the organizer probe who has submitted
-  (D3). The same applies after reveal: final voting needs everyone (D4). The
-  group can start a new decision.
+  (D3). After reveal, the organizer can **close voting early** once more than
+  half the group has voted, so a lost seat no longer blocks the final
+  decision.
 - **A tied final vote is final.** "No decision" freezes the decision; start a
   new one to vote again.
 - **Costs are estimates** of the on-ground cost excluding travel to the

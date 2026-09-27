@@ -89,6 +89,10 @@ export interface VoteOutcomeView {
   tally: Record<string, number>;
   reason: "majority" | "strong_fit" | "fewest_conflict" | null;
   tiedOptionIds: string[];
+  /** True when the organizer closed voting before everyone had voted. */
+  closedEarly: boolean;
+  votesCast: number;
+  participantCount: number;
 }
 
 export interface SanitizedResult {

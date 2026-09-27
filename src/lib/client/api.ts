@@ -55,6 +55,7 @@ export const KNOWN_ERRORS = [
   "voting_unavailable",
   "not_a_top_option",
   "hard_excluded",
+  "quorum_not_met",
   "unauthenticated",
   "server_misconfigured",
   "not_found",
@@ -128,6 +129,9 @@ export const api = {
   },
   async explanation(id: string, signal?: AbortSignal): Promise<ExplanationPayload> {
     return serverFetch<ExplanationPayload>(`/api/decisions/${id}/explanation`, { signal });
+  },
+  async closeVoting(id: string) {
+    return serverFetch<{ decided: true }>(`/api/decisions/${id}/close-voting`, { method: "POST", body: "{}" });
   },
   async vote(id: string, optionId: string) {
     return serverFetch<{ recorded: true; decided: boolean }>(`/api/decisions/${id}/vote`, {

@@ -42,6 +42,7 @@ a `SECURITY DEFINER` RPC:
 | `create_decision` | decision + organizer participant, atomically |
 | `join_decision` | only while collecting; capped at `participant_limit` (organizer counts); row-locked |
 | `submit_response` | always inserts a **new** row. While collecting it can atomically trigger reveal. After reveal it clears all votes (D5). Once decided it is rejected. |
+| `POST /api/decisions/:id/close-voting` (server) | organizer only, revealed with voting open, **more than half have voted**. It is irreversible and uses the same locked finalize step as the last vote. |
 | `set_participant_limit` | organizer only, collecting only, **increase only** (D12). Its result never depends on joined or submitted counts. |
 
 ## The privacy boundary for cross-participant data
