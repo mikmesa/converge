@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1612 854" width="1612" height="854" role="img" aria-labelledby="t d">
+<title id="t">Converge — Components Map</title>
+<desc id="d">Actor, trigger, input, context, processing, AI and output for each component of Converge.</desc>
+<style>
+.bg{fill:#f6f5f1}.card{fill:#fff;stroke:#e2dfd7}.head{fill:#1e5a55}.headt{fill:#fff;font:600 14px ui-sans-serif,system-ui,sans-serif}
+.t{fill:#1d1c1a;font:13px ui-sans-serif,system-ui,sans-serif}.actor{fill:#1d1c1a;font:600 14px ui-sans-serif,system-ui,sans-serif}
+.h1{fill:#1d1c1a;font:600 24px ui-sans-serif,system-ui,sans-serif}.sub{fill:#736f67;font:13px ui-sans-serif,system-ui,sans-serif}
+.ai{fill:#f8eed6}.arrow{stroke:#b7b2a6;stroke-width:1.5;fill:none}.note{fill:#736f67;font:12px ui-sans-serif,system-ui,sans-serif}
+@media (prefers-color-scheme: dark){.bg{fill:#151514}.card{fill:#1e1e1c;stroke:#34332f}.t,.actor,.h1{fill:#eeece7}.sub,.note{fill:#a19d94}.head{fill:#2f7c75}.ai{fill:#362c16}}
+</style>
+<rect class="bg" width="1612" height="854"/>
+<text class="h1" x="20" y="44">Converge — Components Map</text>
+<text class="sub" x="20" y="70">Actor → Trigger → Input → Context → Processing → AI → Output. The deterministic engine is the source of truth; AI only explains.</text>
+<rect class="head" x="20" y="110" width="162" height="36" rx="6"/>
+<text class="headt" x="32" y="133">Actor</text>
+<rect class="head" x="190" y="110" width="182" height="36" rx="6"/>
+<text class="headt" x="202" y="133">Trigger</text>
+<rect class="head" x="380" y="110" width="222" height="36" rx="6"/>
+<text class="headt" x="392" y="133">Input</text>
+<rect class="head" x="610" y="110" width="212" height="36" rx="6"/>
+<text class="headt" x="622" y="133">Context</text>
+<rect class="head" x="830" y="110" width="292" height="36" rx="6"/>
+<text class="headt" x="842" y="133">Processing</text>
+<rect class="head" x="1130" y="110" width="212" height="36" rx="6"/>
+<text class="headt" x="1142" y="133">AI</text>
+<rect class="head" x="1350" y="110" width="242" height="36" rx="6"/>
+<text class="headt" x="1362" y="133">Output</text>
+<rect class="card" x="20" y="154" width="162" height="118" rx="8"/>
+<text class="actor" x="32" y="178">Organizer</text>
+<rect class="card" x="190" y="154" width="182" height="118" rx="8"/>
+<text class="t" x="202" y="178">Creates Decision</text>
+<rect class="card" x="380" y="154" width="222" height="118" rx="8"/>
+<text class="t" x="392" y="178">Group size + decision setup</text>
+<rect class="card" x="610" y="154" width="212" height="118" rx="8"/>
+<text class="t" x="622" y="178">Decision configuration</text>
+<rect class="card" x="830" y="154" width="292" height="118" rx="8"/>
+<text class="t" x="842" y="178">create_decision RPC creates the</text>
+<text class="t" x="842" y="195">decision and the organizer</text>
+<text class="t" x="842" y="212">participant atomically</text>
+<rect class="card" x="1130" y="154" width="212" height="118" rx="8"/>
+<text class="t" x="1142" y="178">None</text>
+<rect class="card" x="1350" y="154" width="242" height="118" rx="8"/>
+<text class="t" x="1362" y="178">Shareable link</text>
+<rect class="card" x="20" y="282" width="162" height="118" rx="8"/>
+<text class="actor" x="32" y="306">Participant</text>
+<rect class="card" x="190" y="282" width="182" height="118" rx="8"/>
+<text class="t" x="202" y="306">Opens link</text>
+<rect class="card" x="380" y="282" width="222" height="118" rx="8"/>
+<text class="t" x="392" y="306">Preferences (dates, budget,</text>
+<text class="t" x="392" y="323">types, activities, notes)</text>
+<rect class="card" x="610" y="282" width="212" height="118" rx="8"/>
+<text class="t" x="622" y="306">Decision public metadata</text>
+<text class="t" x="622" y="323">(no options, no counts)</text>
+<rect class="card" x="830" y="282" width="292" height="118" rx="8"/>
+<text class="t" x="842" y="306">join_decision + submit_response</text>
+<text class="t" x="842" y="323">RPCs; every edit is a new private</text>
+<text class="t" x="842" y="340">row</text>
+<rect class="card" x="1130" y="282" width="212" height="118" rx="8"/>
+<text class="t" x="1142" y="306">None — notes are private</text>
+<text class="t" x="1142" y="323">and never sent to AI (D11</text>
+<text class="t" x="1142" y="340">retires §23's "interpret</text>
+<text class="t" x="1142" y="357">free-text notes")</text>
+<rect class="card" x="1350" y="282" width="242" height="118" rx="8"/>
+<text class="t" x="1362" y="306">Saved private response</text>
+<rect class="card" x="20" y="410" width="162" height="118" rx="8"/>
+<text class="actor" x="32" y="434">Decision Engine</text>
+<rect class="card" x="190" y="410" width="182" height="118" rx="8"/>
+<text class="t" x="202" y="434">All participants</text>
+<text class="t" x="202" y="451">submitted (atomic</text>
+<text class="t" x="202" y="468">reveal)</text>
+<rect class="card" x="380" y="410" width="222" height="118" rx="8"/>
+<text class="t" x="392" y="434">Structured responses +</text>
+<text class="t" x="392" y="451">curated options (server</text>
+<text class="t" x="392" y="468">only)</text>
+<rect class="card" x="610" y="410" width="212" height="118" rx="8"/>
+<text class="t" x="622" y="434">Group constraints</text>
+<rect class="card" x="830" y="410" width="292" height="118" rx="8"/>
+<text class="t" x="842" y="434">Hard filtering → fit tiering →</text>
+<text class="t" x="842" y="451">lexicographic ranking → compromise</text>
+<text class="t" x="842" y="468">sensitivity → sanitize</text>
+<rect class="card" x="1130" y="410" width="212" height="118" rx="8"/>
+<text class="t" x="1142" y="434">None</text>
+<rect class="card" x="1350" y="410" width="242" height="118" rx="8"/>
+<text class="t" x="1362" y="434">Top ≤3 group-feasible options</text>
+<text class="t" x="1362" y="451">+ categorical fit matrix</text>
+<rect class="card" x="20" y="538" width="162" height="118" rx="8"/>
+<text class="actor" x="32" y="562">AI Explanation</text>
+<text class="actor" x="32" y="579">Layer</text>
+<rect class="card" x="190" y="538" width="182" height="118" rx="8"/>
+<text class="t" x="202" y="562">Deterministic results</text>
+<text class="t" x="202" y="579">ready</text>
+<rect class="card" x="380" y="538" width="222" height="118" rx="8"/>
+<text class="t" x="392" y="562">Sanitized result object</text>
+<text class="t" x="392" y="579">(names + categories)</text>
+<rect class="card" x="610" y="538" width="212" height="118" rx="8"/>
+<text class="t" x="622" y="562">Fit tiers + trade-offs</text>
+<rect class="card" x="830" y="538" width="292" height="118" rx="8"/>
+<text class="t" x="842" y="562">Explanation generation;</text>
+<text class="t" x="842" y="579">schema/content validated; never</text>
+<text class="t" x="842" y="596">blocks</text>
+<rect class="card ai" x="1130" y="538" width="212" height="118" rx="8"/>
+<text class="t" x="1142" y="562">LLM</text>
+<rect class="card" x="1350" y="538" width="242" height="118" rx="8"/>
+<text class="t" x="1362" y="562">Plain-English compromise</text>
+<text class="t" x="1362" y="579">explanation (optional)</text>
+<rect class="card" x="20" y="666" width="162" height="118" rx="8"/>
+<text class="actor" x="32" y="690">Group</text>
+<rect class="card" x="190" y="666" width="182" height="118" rx="8"/>
+<text class="t" x="202" y="690">Results revealed</text>
+<rect class="card" x="380" y="666" width="222" height="118" rx="8"/>
+<text class="t" x="392" y="690">Top options + per-person</text>
+<text class="t" x="392" y="707">fit</text>
+<rect class="card" x="610" y="666" width="212" height="118" rx="8"/>
+<text class="t" x="622" y="690">Comparison context</text>
+<rect class="card" x="830" y="666" width="292" height="118" rx="8"/>
+<text class="t" x="842" y="690">Review + blind final vote; atomic</text>
+<text class="t" x="842" y="707">finalize; deterministic tie-breaks</text>
+<rect class="card" x="1130" y="666" width="212" height="118" rx="8"/>
+<text class="t" x="1142" y="690">None</text>
+<rect class="card" x="1350" y="666" width="242" height="118" rx="8"/>
+<text class="t" x="1362" y="690">Selected option / no decision</text>
+<text class="note" x="20" y="830">Privacy boundary: cross-participant data only flows through the server-side engine (converge_server role) and leaves as sanitized categories. Budgets and notes never reach other participants or the AI.</text>
+</svg>

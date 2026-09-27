@@ -1,26 +1,128 @@
 @import "tailwindcss";
 
+/*
+ * Converge design tokens — calm, warm neutrals with one deep accent.
+ * Tier colours are always paired with a text label (never colour alone).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efede7;
+  --ink: #1d1c1a;
+  --ink-2: #4a4843;
+  --muted: #736f67;
+  --line: #e2dfd7;
+  --accent: #1e5a55;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2eeec;
+  --focus: #2f7c75;
+
+  --strong: #256245;
+  --strong-bg: #e3f0e8;
+  --compromise: #7a5200;
+  --compromise-bg: #f8eed6;
+  --conflict: #8f3528;
+  --conflict-bg: #f6e2dd;
+  --insufficient: #5d5a54;
+  --insufficient-bg: #ebe9e4;
+  --danger: #9b2f22;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151514;
+    --surface: #1e1e1c;
+    --surface-2: #272724;
+    --ink: #eeece7;
+    --ink-2: #cfccc4;
+    --muted: #a19d94;
+    --line: #34332f;
+    --accent: #7cc3bb;
+    --accent-ink: #0f2624;
+    --accent-soft: #1f3432;
+    --focus: #8fd3cb;
+
+    --strong: #8ad0a8;
+    --strong-bg: #1d3327;
+    --compromise: #e6c16f;
+    --compromise-bg: #362c16;
+    --conflict: #ef9d8f;
+    --conflict-bg: #3b221d;
+    --insufficient: #bdb9b0;
+    --insufficient-bg: #2c2b28;
+    --danger: #f08b7d;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #151514;
+  --surface: #1e1e1c;
+  --surface-2: #272724;
+  --ink: #eeece7;
+  --ink-2: #cfccc4;
+  --muted: #a19d94;
+  --line: #34332f;
+  --accent: #7cc3bb;
+  --accent-ink: #0f2624;
+  --accent-soft: #1f3432;
+  --focus: #8fd3cb;
+  --strong: #8ad0a8;
+  --strong-bg: #1d3327;
+  --compromise: #e6c16f;
+  --compromise-bg: #362c16;
+  --conflict: #ef9d8f;
+  --conflict-bg: #3b221d;
+  --insufficient: #bdb9b0;
+  --insufficient-bg: #2c2b28;
+  --danger: #f08b7d;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-strong: var(--strong);
+  --color-strong-bg: var(--strong-bg);
+  --color-compromise: var(--compromise);
+  --color-compromise-bg: var(--compromise-bg);
+  --color-conflict: var(--conflict);
+  --color-conflict-bg: var(--conflict-bg);
+  --color-insufficient: var(--insufficient);
+  --color-insufficient-bg: var(--insufficient-bg);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+input[type="date"] {
+  min-height: 2.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

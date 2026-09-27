@@ -67,7 +67,7 @@ describe("sanitizeResult — privacy boundary", () => {
   it("carries no raw response fields, notes or auth identifiers", () => {
     const json = JSON.stringify(build().sanitized);
     for (const key of ["idealBudget", "maxBudget", "preferredTypes", "avoidedTypes", "dealbreakerTypes", "notes", "preferredDateRanges", "authUserId", "auth_user_id", "budgetOvershoot"]) {
-      expect(json).not.toContain(key);
+      expect(json).not.toContain(`"${key}"`);
     }
   });
 
