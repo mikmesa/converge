@@ -67,7 +67,6 @@ Further reading:
 Requirements: Node 22+, Docker (for the local Supabase stack), `psql`.
 
 ```bash
-cd converge
 npm install
 npm run db:start          # local Supabase (Postgres + Auth + REST) in Docker
 npm run db:reset          # apply migrations + seed + set the local server-role password
@@ -148,13 +147,12 @@ npm run build && npm run test:e2e   # Playwright, mobile + desktop, multi-person
 
 ## Deployment (Vercel)
 
-The Next.js app lives in the `converge/` subdirectory of this repository.
+The Next.js app is at the root of this repository.
 
-1. Import the GitHub repository in Vercel.
-2. Set **Root Directory = `converge`**. The framework preset is detected as
-   Next.js.
-3. Add the environment variables above (Production and Preview).
-4. Deploy.
+1. Import the GitHub repository in Vercel. The framework preset is detected
+   as Next.js; no Root Directory setting is needed.
+2. Add the environment variables above (Production and Preview).
+3. Deploy.
 
 ## Known V1 limitations
 
