@@ -96,6 +96,7 @@ export function ResultsView({ decision }: { decision: DecisionPublic }) {
         <PreferenceForm
           initial={history[0] ?? null}
           travelYear={decision.travel_year}
+          draftKey={`${decision.id}:${decision.member?.participant_id ?? "x"}`}
           afterReveal
           onCancel={() => setEditing(false)}
           onSubmit={async (payload) => {

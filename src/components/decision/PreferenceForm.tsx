@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppError, type OwnResponse, type ResponsePayload } from "@/lib/client/api";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/client/draft";
+import { formatINR } from "@/lib/client/format";
+import { checkBudgets, parseRupees } from "@/lib/domain/budget";
 import { isValidISODate } from "@/lib/engine/dates";
 import {
   ACTIVITIES,
   ACTIVITY_LABELS,
-  MAX_BUDGET_VALUE,
   MAX_DATE_RANGES,
   MAX_NOTES_LENGTH,
   OPTION_TYPE_HINTS,
@@ -53,6 +55,26 @@ function initialActivities(r: OwnResponse | null): Partial<Record<Activity, Acti
   return out;
 }
 
+interface FormDraft {
+  ranges: Range[];
+  ideal: string;
+  max: string;
+  types: Record<OptionType, TypeChoice>;
+  activities: Partial<Record<Activity, ActivityChoice>>;
+  notes: string;
+}
+
+function draftFrom(r: OwnResponse | null): FormDraft {
+  return {
+    ranges: r?.preferred_date_ranges ?? [],
+    ideal: r?.ideal_budget?.toString() ?? "",
+    max: r?.max_budget?.toString() ?? "",
+    types: initialTypes(r),
+    activities: initialActivities(r),
+    notes: r?.notes ?? "",
+  };
+}
+
 export interface FormErrors {
   dates?: string;
   budget?: string;
@@ -76,21 +98,8 @@ export function validateForm(ranges: Range[], ideal: string, max: string, notes:
       break;
     }
   }
-  const hasIdeal = ideal.trim() !== "";
-  const hasMax = max.trim() !== "";
-  if (hasIdeal !== hasMax) {
-    errors.budget = "Add both an ideal and a maximum budget, or leave both empty.";
-  } else if (hasIdeal) {
-    const i = Number(ideal);
-    const m = Number(max);
-    if (!Number.isInteger(i) || !Number.isInteger(m) || i <= 0 || m <= 0) {
-      errors.budget = "Budgets must be whole rupee amounts above zero.";
-    } else if (m > MAX_BUDGET_VALUE) {
-      errors.budget = "That maximum is higher than this tool supports.";
-    } else if (i > m) {
-      errors.budget = "Your ideal budget can't be higher than your maximum.";
-    }
-  }
+  const budget = checkBudgets(ideal, max);
+  if (!budget.ok) errors.budget = budget.error;
   if (notes.length > MAX_NOTES_LENGTH) errors.notes = `Keep notes under ${MAX_NOTES_LENGTH} characters.`;
   return errors;
 }
@@ -99,27 +108,57 @@ export function PreferenceForm({
   initial,
   travelYear,
   afterReveal,
+  draftKey,
   onSubmit,
   onCancel,
 }: {
   initial: OwnResponse | null;
   travelYear: number | null;
+  /** Where unsubmitted answers are kept on this device (per decision + participant). */
+  draftKey: string;
   afterReveal?: boolean;
   onSubmit: (payload: ResponsePayload) => Promise<void>;
   onCancel?: () => void;
 }) {
-  const [ranges, setRanges] = useState<Range[]>(initial?.preferred_date_ranges ?? []);
-  const [ideal, setIdeal] = useState(initial?.ideal_budget?.toString() ?? "");
-  const [max, setMax] = useState(initial?.max_budget?.toString() ?? "");
-  const [types, setTypes] = useState(() => initialTypes(initial));
-  const [activities, setActivities] = useState(() => initialActivities(initial));
-  const [notes, setNotes] = useState(initial?.notes ?? "");
+  // A draft saved on this device (e.g. before a refresh) wins over the last
+  // submitted response, so half-finished edits aren't lost.
+  const [baseline] = useState(() => JSON.stringify(draftFrom(initial)));
+  const [draft] = useState(() => {
+    const d = loadDraft<FormDraft>(draftKey);
+    return d && JSON.stringify(d) !== baseline ? d : null;
+  });
+  const [ranges, setRanges] = useState<Range[]>(draft?.ranges ?? initial?.preferred_date_ranges ?? []);
+  const [ideal, setIdeal] = useState(draft?.ideal ?? initial?.ideal_budget?.toString() ?? "");
+  const [max, setMax] = useState(draft?.max ?? initial?.max_budget?.toString() ?? "");
+  const [types, setTypes] = useState(() => draft?.types ?? initialTypes(initial));
+  const [activities, setActivities] = useState(() => draft?.activities ?? initialActivities(initial));
+  const [notes, setNotes] = useState(draft?.notes ?? initial?.notes ?? "");
+  const [restored, setRestored] = useState(draft !== null);
+
+  useEffect(() => {
+    const current: FormDraft = { ranges, ideal, max, types, activities, notes };
+    // Only keep a draft when something actually differs from what's saved.
+    if (JSON.stringify(current) === baseline) clearDraft(draftKey);
+    else saveDraft<FormDraft>(draftKey, current);
+  }, [draftKey, baseline, ranges, ideal, max, types, activities, notes]);
+
+  function discardDraft() {
+    clearDraft(draftKey);
+    setRanges(initial?.preferred_date_ranges ?? []);
+    setIdeal(initial?.ideal_budget?.toString() ?? "");
+    setMax(initial?.max_budget?.toString() ?? "");
+    setTypes(initialTypes(initial));
+    setActivities(initialActivities(initial));
+    setNotes(initial?.notes ?? "");
+    setRestored(false);
+  }
   const [errors, setErrors] = useState<FormErrors>({});
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
-  const defaultMonth = travelYear && String(travelYear) > today.slice(0, 4) ? `${travelYear}-01-01` : today;
+  const idealParsed = parseRupees(ideal);
+  const maxParsed = parseRupees(max);
 
   function cycleActivity(a: Activity) {
     setActivities((prev) => {
@@ -137,8 +176,8 @@ export function PreferenceForm({
     if (Object.keys(v).length > 0) return;
     const payload: ResponsePayload = {
       preferred_date_ranges: ranges.length > 0 ? ranges : null,
-      ideal_budget: ideal.trim() ? Number(ideal) : null,
-      max_budget: max.trim() ? Number(max) : null,
+      ideal_budget: parseRupees(ideal),
+      max_budget: parseRupees(max),
       preferred_types: OPTION_TYPES.filter((t) => types[t] === "prefer"),
       avoided_types: OPTION_TYPES.filter((t) => types[t] === "avoid"),
       dealbreaker_types: OPTION_TYPES.filter((t) => types[t] === "never"),
@@ -149,6 +188,7 @@ export function PreferenceForm({
     setBusy(true);
     try {
       await onSubmit(payload);
+      clearDraft(draftKey);
     } catch (err) {
       const code = err instanceof AppError ? err.code : "unknown";
       setServerError(
@@ -167,6 +207,17 @@ export function PreferenceForm({
 
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
+      {restored ? (
+        <Notice tone="neutral" title="We kept your unsaved answers">
+          <span>These haven’t been submitted yet. </span>
+          <button type="button" className="font-medium text-accent underline" onClick={discardDraft}>
+            Discard them
+          </button>
+        </Notice>
+      ) : null}
+      {travelYear ? (
+        <p className="text-sm text-muted">The organizer is planning for {travelYear}.</p>
+      ) : null}
       {afterReveal ? (
         <Notice tone="accent" title="Editing after results are out">
           Your new answers replace your current ones in the results. Everyone will see that you
@@ -230,7 +281,6 @@ export function PreferenceForm({
             type="button"
             variant="secondary"
             onClick={() => setRanges((rs) => [...rs, { start: "", end: "" }])}
-            data-default-month={defaultMonth}
           >
             + Add dates
           </Button>
@@ -253,10 +303,12 @@ export function PreferenceForm({
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">₹</span>
               <input
                 inputMode="numeric"
-                pattern="[0-9]*"
                 className={cx(inputClass, "pl-7")}
                 value={ideal}
-                onChange={(e) => setIdeal(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => {
+                  setIdeal(e.target.value);
+                  setErrors((er) => ({ ...er, budget: undefined }));
+                }}
                 placeholder="15000"
                 aria-label="Ideal budget per person in rupees"
               />
@@ -268,16 +320,23 @@ export function PreferenceForm({
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">₹</span>
               <input
                 inputMode="numeric"
-                pattern="[0-9]*"
                 className={cx(inputClass, "pl-7")}
                 value={max}
-                onChange={(e) => setMax(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => {
+                  setMax(e.target.value);
+                  setErrors((er) => ({ ...er, budget: undefined }));
+                }}
                 placeholder="22000"
                 aria-label="Maximum budget per person in rupees"
               />
             </div>
           </label>
         </div>
+        {idealParsed !== null && maxParsed !== null && !errors.budget ? (
+          <p className="text-xs text-muted" aria-live="polite">
+            Saved as {formatINR(idealParsed)} ideal · {formatINR(maxParsed)} maximum
+          </p>
+        ) : null}
         {errors.budget ? <p className="text-xs text-danger" role="alert">{errors.budget}</p> : null}
       </Card>
 
@@ -299,14 +358,10 @@ export function PreferenceForm({
               </div>
               <div className="grid grid-cols-4 gap-1 rounded-lg bg-surface-2 p-1" role="radiogroup" aria-label={OPTION_TYPE_LABELS[t]}>
                 {TYPE_CHOICES.map((c) => (
-                  <button
+                  <label
                     key={c.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={types[t] === c.value}
-                    onClick={() => setTypes((prev) => ({ ...prev, [t]: c.value }))}
                     className={cx(
-                      "min-h-10 rounded-md px-1 text-xs font-medium sm:text-sm",
+                      "relative flex min-h-10 cursor-pointer items-center justify-center rounded-md px-1 text-center text-xs font-medium has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-[var(--focus)] sm:text-sm",
                       types[t] === c.value
                         ? c.value === "never"
                           ? "bg-conflict text-surface"
@@ -318,8 +373,17 @@ export function PreferenceForm({
                         : "text-muted hover:text-ink",
                     )}
                   >
+                    {/* Native radio: arrow keys move within the group, Tab moves between groups. */}
+                    <input
+                      type="radio"
+                      name={`type-${t}`}
+                      value={c.value}
+                      checked={types[t] === c.value}
+                      onChange={() => setTypes((prev) => ({ ...prev, [t]: c.value }))}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
                     {c.label}
-                  </button>
+                  </label>
                 ))}
               </div>
             </li>
@@ -380,7 +444,14 @@ export function PreferenceForm({
       {serverError ? <Notice tone="danger">{serverError}</Notice> : null}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {onCancel ? (
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              clearDraft(draftKey);
+              onCancel();
+            }}
+          >
             Cancel
           </Button>
         ) : null}

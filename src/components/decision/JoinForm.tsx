@@ -51,7 +51,11 @@ export function JoinForm({
           at once.
         </p>
         <form onSubmit={submit} className="space-y-4" noValidate>
-          <Field label="Your name" hint="Shown to the group after results reveal. No account needed." htmlFor="join-name">
+          <Field
+            label="Your name"
+            hint={`Shown to the group after results reveal. No account needed. Up to ${MAX_NAME_LENGTH} characters${name.length > MAX_NAME_LENGTH - 10 ? ` (${MAX_NAME_LENGTH - name.length} left)` : ""}.`}
+            htmlFor="join-name"
+          >
             <input
               id="join-name"
               className={inputClass}
@@ -61,6 +65,11 @@ export function JoinForm({
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
+          <p className="text-xs text-muted">
+            Converge remembers you only in <strong>this browser on this device</strong>. Open the
+            link the same way each time — if you switch browser or app (for example WhatsApp’s
+            built-in browser and then Chrome), you’d join as a new person and take a second seat.
+          </p>
           {error ? <Notice tone="danger">{error}</Notice> : null}
           <Button type="submit" busy={busy} className="w-full">
             Continue

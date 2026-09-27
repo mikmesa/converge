@@ -79,25 +79,35 @@ export function CreateDecisionForm() {
           <p className="text-xs text-muted">Results reveal once this many people have answered. You can raise it later, not lower it.</p>
           <div className="grid grid-cols-6 gap-2" role="radiogroup" aria-label="Group size">
             {SIZES.map((n) => (
-              <button
+              <label
                 key={n}
-                type="button"
-                role="radio"
-                aria-checked={size === n}
-                onClick={() => setSize(n)}
                 className={cx(
-                  "min-h-11 rounded-lg border text-sm font-medium",
+                  "relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)]",
                   size === n ? "border-accent bg-accent text-accent-ink" : "border-line bg-surface hover:bg-surface-2",
                 )}
               >
+                {/* Native radio: Tab reaches the group once, arrow keys pick a size. */}
+                <input
+                  type="radio"
+                  name="group-size"
+                  value={n}
+                  checked={size === n}
+                  onChange={() => setSize(n)}
+                  className="absolute inset-0 cursor-pointer opacity-0"
+                />
                 {n}
-              </button>
+              </label>
             ))}
           </div>
           {sizeError ? <p className="text-xs text-danger" role="alert">{sizeError}</p> : null}
         </fieldset>
 
-        <Field label="Your name" hint="Shown to the group after results reveal." htmlFor="your-name" error={yourNameError}>
+        <Field
+          label="Your name"
+          hint={`Shown to the group after results reveal. Up to ${MAX_NAME_LENGTH} characters${yourName.length > MAX_NAME_LENGTH - 10 ? ` (${MAX_NAME_LENGTH - yourName.length} left)` : ""}.`}
+          htmlFor="your-name"
+          error={yourNameError}
+        >
           <input
             id="your-name"
             className={inputClass}
@@ -108,7 +118,7 @@ export function CreateDecisionForm() {
           />
         </Field>
 
-        <Field label="Travel year (optional)" hint="Only used to start the date pickers in the right year." htmlFor="year">
+        <Field label="Travel year (optional)" hint="Optional. Shown to everyone on the form as the year you’re planning for." htmlFor="year">
           <select id="year" className={inputClass} value={year} onChange={(e) => setYear(e.target.value)}>
             <option value="">No preference</option>
             <option value="2026">2026</option>

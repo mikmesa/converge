@@ -152,6 +152,7 @@ export function CollectingView({
         <PreferenceForm
           initial={latest}
           travelYear={decision.travel_year}
+          draftKey={`${decision.id}:${member.participant_id}`}
           onCancel={latest ? () => setEditing(false) : undefined}
           onSubmit={async (payload) => {
             const r = await api.submit(decision.id, payload);
@@ -175,7 +176,7 @@ export function CollectingView({
             </p>
             <p className="text-xs text-muted">
               Last saved {formatDate(latest!.submitted_at.slice(0, 10))}. This page updates on its
-              own.
+              own. Come back in this same browser — it’s how Converge knows it’s you.
             </p>
             <div className="pt-1">
               <Button variant="secondary" onClick={() => setEditing(true)}>
